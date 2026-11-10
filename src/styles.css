@@ -1,0 +1,22 @@
+/* ORBIT HEALTH — main stylesheet
+   Design system (tokens + shell + all screens) loads first,
+   then screen-specific overrides for Mission Control, etc.
+   The old minified block is replaced by designSystem.css.
+   unslop by Damir Sokolovsky (CC BY 4.0) */
+
+@import './styles/designSystem.css';
+
+/* Per-screen CSS — these only add what designSystem.css doesn't cover */
+@import './styles/missionControl.css';
+@import './styles/healthMonitoring.css';
+@import './styles/crewStatus.css';
+@import './styles/medicalBay.css';
+@import './styles/orbitAI.css';
+@import './styles/biometricScan.css';
+@import './styles/emergencyCenter.css';
+@import './styles/authModals.css';
+@import './styles/crewAdmin.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,0 +1,352 @@
+/**
+ * ORBIT HEALTH — Administrator Crew Operations Hub Styling
+ * Token-driven aerospace design system
+ */
+
+.crew-admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  animation: adminFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)}
+
+@keyframes adminFadeIn {
+  from { opacity:0; transform:translateY(8px)}
+  to { opacity:1; transform:translateY(0)}
+}
+
+.admin-header-banner {
+  background: var(--ink-2);
+  border: 1px solid rgba(229,96,79,0.3);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,.35)}
+
+.admin-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem}
+
+.admin-badge-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(229,96,79,0.15);
+  border: 1px solid rgba(229,96,79,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--danger)}
+
+.admin-header-info h1 {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.25rem 0}
+
+.admin-header-info p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-secondary, var(--text-2))}
+
+.admin-stats-strip {
+  display: flex;
+  gap: 1.5rem}
+
+.admin-stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-family: var(--font-mono, monospace)}
+
+.admin-stat-card span {
+  font-size: 0.68rem;
+  color: var(--text-tertiary, var(--text-2));
+  text-transform: none;
+  letter-spacing: .02em}
+
+.admin-stat-card strong {
+  font-size: 1.15rem;
+  color: #ffffff}
+
+/* Tab Navigation */
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.5rem}
+
+.admin-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-secondary, var(--text-2));
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,transform .15s ease}
+
+.admin-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff}
+
+.admin-tab-btn.active {
+  background: rgba(98,212,200,0.12);
+  border-color: rgba(98,212,200,0.35);
+  color: var(--accent);
+  font-weight: 500}
+
+.admin-tab-counter {
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  background: rgba(229,96,79,0.2);
+  color: var(--danger);
+  border: 1px solid rgba(229,96,79,0.4)}
+
+/* Triage Queue */
+.triage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 1.25rem}
+
+.triage-card {
+  background: var(--ink-2);
+  border: 1px solid rgba(224,164,60,0.3);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35)}
+
+.triage-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between}
+
+.triage-candidate-info h3 {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 0 0.2rem 0}
+
+.triage-candidate-info span {
+  font-size: 0.78rem;
+  color: var(--text-tertiary, var(--text-2));
+  font-family: var(--font-mono, monospace)}
+
+.triage-details-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-family: var(--font-mono, monospace)}
+
+.triage-details-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary, var(--text))}
+
+.triage-details-row strong {
+  color: var(--accent)}
+
+.triage-statement {
+  font-size: 0.8rem;
+  color: var(--text-2);
+  font-style: normal;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  border-left: 2px solid var(--warn)}
+
+.triage-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto}
+
+.btn-approve {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  background: rgba(76,195,138,0.6);
+  border: 1px solid rgba(76,195,138,0.24);
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,transform .15s ease}
+
+.btn-approve:hover {
+  background: rgba(76,195,138,0.6);
+  box-shadow: 0 4px 12px rgba(0,0,0,.35)}
+
+.btn-reject {
+  padding: 0.65rem 1rem;
+  background: rgba(229,96,79,0.15);
+  border: 1px solid rgba(229,96,79,0.3);
+  border-radius: 4px;
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,transform .15s ease}
+
+.btn-reject:hover {
+  background: rgba(229,96,79,0.25)}
+
+/* Empty Triage State */
+.triage-empty {
+  padding: 3rem 2rem;
+  background: rgba(22,26,31,0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  color: var(--text-secondary, var(--text-2))}
+
+.triage-empty svg {
+  color: rgba(76,195,138,0.6)}
+
+/* Crew Table in Directory */
+.admin-table-container {
+  background: var(--ink-2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  box-shadow: 0 4px 25px rgba(0,0,0,.35)}
+
+.admin-table-top {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between}
+
+.admin-table-top h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0}
+
+.admin-crew-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.84rem}
+
+.admin-crew-table th {
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--text-tertiary, var(--text-2));
+  text-transform: none;
+  letter-spacing: .02em}
+
+.admin-crew-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-primary, var(--text));
+  vertical-align: middle}
+
+.admin-crew-table tr:hover td {
+  background: rgba(98,212,200,0.04)}
+
+.crew-row-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem}
+
+.crew-row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono, monospace);
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: #ffffff}
+
+.crew-row-avatar.violet { background:var(--steel)}
+.crew-row-avatar.blue { background:var(--steel)}
+.crew-row-avatar.amber { background:var(--warn)}
+.crew-row-avatar.teal { background:rgba(98,212,200,0.6)}
+.crew-row-avatar.cyan { background:rgba(98,212,200,0.6)}
+
+.crew-actions-cell {
+  display: flex;
+  gap: 0.4rem}
+
+.btn-table-action {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-secondary, var(--text));
+  padding: 0.35rem 0.6rem;
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,transform .15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem}
+
+.btn-table-action:hover {
+  background: rgba(98,212,200,0.15);
+  border-color: rgba(98,212,200,0.4);
+  color: #ffffff}
+
+/* Modal Form for Add Crew Member */
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--ink-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: adminFadeIn 0.2s ease}
+
+.admin-modal-card {
+  width: 100%;
+  max-width: 580px;
+  background: var(--ink-2);
+  border: 1px solid rgba(98,212,200,0.3);
+  border-radius: var(--radius-xl, 12px);
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,.35)}
+
