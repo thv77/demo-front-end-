@@ -1,19 +1,2632 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#050914" />
-    <meta name="description" content="ORBIT HEALTH - Astronaut health monitoring concept interface." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <title>ORBIT HEALTH | Mission Medical System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NASA ORBIT HEALTH — Expedition 07 Astronaut Telemetry &amp; Clinical Operations</title>
+<meta name="description" content="Aerospace-grade clinical telemetry, physiological digital twin modeling, and autonomous healthcare for deep-space astronaut missions.">
+<meta name="theme-color" content="#000000">
+
+<!-- Typography: Instrument Serif, Fragment Mono, Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script type="importmap" data-cfasync="false">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/",
+    "lenis": "./vendor/lenis.mjs"
+  }
+}
+</script>
+<link rel="modulepreload" href="./vendor/three.module.js">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS & AEROSPACE COLOR PALETTE
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --bg-void: #000000;
+  --bg-deep: #05080e;
+  --bg-card: rgba(10, 16, 26, 0.72);
+  --bg-card-hover: rgba(16, 24, 39, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(0, 240, 255, 0.25);
+  --border-lime: rgba(16, 185, 129, 0.35);
+
+  --neon-cyan: #00f0ff;
+  --neon-lime: #10b981;
+  --neon-lime-bright: #34d399;
+  --neon-amber: #f59e0b;
+  --neon-violet: #8b5cf6;
+  --neon-red: #ef4444;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-mono: "Fragment Mono", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --stream-lime: #10b981;
+  --stream-cyan: #00f0ff;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  background: var(--bg-void);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--bg-void);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   THREE.JS PARTICLE STREAM CANVAS & BACKGROUND BLOOMS
+   ═══════════════════════════════════════════════════════════════════ */
+#stream {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.backdrop-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url('./assets/backdrop/backdrop-dot-field.svg');
+  background-repeat: repeat;
+  background-size: 800px 800px;
+  opacity: 0.25;
+}
+
+.ambient-bloom {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+  opacity: 0.18;
+}
+.bloom-top-right {
+  top: -10vw;
+  right: -10vw;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, var(--neon-cyan) 0%, transparent 70%);
+}
+.bloom-center-left {
+  top: 40vh;
+  left: -15vw;
+  width: 45vw;
+  height: 45vw;
+  background: radial-gradient(circle, var(--neon-lime) 0%, transparent 70%);
+}
+.bloom-bottom {
+  bottom: -15vw;
+  right: 15vw;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, var(--neon-violet) 0%, transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRELOADER (RING-AND-FOLD AEROSPACE CALIBRATION)
+   ═══════════════════════════════════════════════════════════════════ */
+#preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+}
+#preloader.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.preloader-ring-box {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preloader-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.preloader-circle-bg {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 3;
+  fill: none;
+}
+.preloader-circle-fill {
+  stroke: var(--neon-lime);
+  stroke-width: 3;
+  fill: none;
+  stroke-dasharray: 408;
+  stroke-dashoffset: 408;
+  transition: stroke-dashoffset 0.1s ease;
+  filter: drop-shadow(0 0 8px var(--neon-lime));
+}
+.preloader-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.preloader-pct {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--neon-lime);
+}
+.preloader-hud-text {
+  margin-top: 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIXED AEROSPACE HUD HEADER
+   ═══════════════════════════════════════════════════════════════════ */
+.hud-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all 0.3s ease;
+}
+.hud-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.hud-meatball {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #0284c7, #0f172a);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.35);
+}
+.hud-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.hud-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+.hud-subtitle {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--neon-cyan);
+  letter-spacing: 0.12em;
+}
+
+.hud-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px 6px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.hud-link {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.hud-link:hover, .hud-link.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.hud-link.active {
+  color: var(--neon-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
+.hud-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.hud-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--neon-lime-bright);
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--neon-lime-bright);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--neon-lime-bright);
+  animation: pulseAnim 1.6s infinite;
+}
+@keyframes pulseAnim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+.hud-clock {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN WRAPPER & SECTIONS
+   ═══════════════════════════════════════════════════════════════════ */
+.page-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 100px 32px 60px;
+}
+
+section.deck-section {
+  margin-bottom: 120px;
+  position: relative;
+}
+
+.deck-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 14px;
+}
+.deck-eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+  border-radius: 1px;
+}
+
+h1.deck-title-hero {
+  font-family: var(--font-serif);
+  font-size: clamp(48px, 6vw, 84px);
+  line-height: 1.05;
+  font-weight: 400;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+h1.deck-title-hero em {
+  font-style: italic;
+  color: var(--neon-lime-bright);
+}
+
+h2.deck-title {
+  font-family: var(--font-serif);
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1.15;
+  font-weight: 400;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+h2.deck-title em {
+  font-style: italic;
+  color: var(--neon-cyan);
+}
+
+p.deck-subhead {
+  font-size: clamp(15px, 1.3vw, 18px);
+  color: var(--text-secondary);
+  max-width: 720px;
+  line-height: 1.6;
+  margin-bottom: 36px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERO DECK (01 - MISSION CONTROL)
+   ═══════════════════════════════════════════════════════════════════ */
+.hero-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+@media (max-width: 1024px) {
+  .hero-layout { grid-template-columns: 1fr; }
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.btn-neon {
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+.btn-neon-primary {
+  background: var(--neon-lime);
+  color: #022014;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+.btn-neon-primary:hover {
+  background: #34d399;
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+}
+.btn-neon-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border: 1px solid var(--border-subtle);
+}
+.btn-neon-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.card-glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.3s, transform 0.3s;
+}
+.card-glass:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.orbit-gauges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.gauge-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.gauge-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.gauge-val {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+}
+.gauge-val small {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  margin-left: 4px;
+}
+.gauge-status {
+  font-size: 11px;
+  color: var(--neon-lime-bright);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DECK 02: HEALTH MONITORING (REAL-TIME ECG & BIOMETRIC SIGNALS)
+   ═══════════════════════════════════════════════════════════════════ */
+.crew-selector-bar {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 24px;
+}
+.crew-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.crew-tab-btn:hover, .crew-tab-btn.active {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: var(--border-glow);
+  color: #fff;
+}
+.crew-tab-btn.active {
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+}
+.crew-tab-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--neon-cyan);
+}
+
+.telemetry-stage {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 1024px) {
+  .telemetry-stage { grid-template-columns: 1fr; }
+}
+
+.ecg-monitor-card {
+  position: relative;
+  background: #020617;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  overflow: hidden;
+}
+.ecg-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.ecg-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--neon-cyan);
+}
+.ecg-controls {
+  display: flex;
+  gap: 8px;
+}
+.sound-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.sound-btn.active {
+  color: var(--neon-lime-bright);
+  border-color: var(--neon-lime);
+}
+
+#ecg-canvas {
+  width: 100%;
+  height: 180px;
+  background: #01040a;
+  border-radius: 6px;
+  display: block;
+}
+
+.vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+.vital-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 14px 18px;
+}
+.vital-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.vital-val {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  margin-top: 4px;
+}
+.vital-val.lime { color: var(--neon-lime-bright); }
+.vital-val.amber { color: var(--neon-amber); }
+
+/* Digital Twin Silhouette */
+.digital-twin-box {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+.body-silhouette-svg {
+  width: 220px;
+  height: 320px;
+  margin: 16px 0;
+}
+.heat-node {
+  fill: var(--neon-lime);
+  filter: drop-shadow(0 0 10px var(--neon-lime));
+  animation: pulseAnim 1.2s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DECK 03: CREW ROSTER
+   ═══════════════════════════════════════════════════════════════════ */
+.crew-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.astronaut-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.astronaut-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-glow);
+  box-shadow: 0 14px 30px rgba(0, 240, 255, 0.12);
+}
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.astronaut-avatar-img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+}
+.astronaut-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+.astronaut-role {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.crew-telemetry-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.crew-telemetry-row span { color: var(--text-muted); }
+.crew-telemetry-row strong { color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DECK 04 & 05: MEDICAL BAY & EMERGENCY CENTER
+   ═══════════════════════════════════════════════════════════════════ */
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 900px) {
+  .two-col-grid { grid-template-columns: 1fr; }
+}
+
+.equipment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 14px;
+}
+.equipment-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.equipment-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.tag-ready {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--neon-lime-bright);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.emergency-protocol-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+.protocol-item {
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.protocol-item:hover, .protocol-item.active {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: var(--neon-red);
+}
+.protocol-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.protocol-steps {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DECK 06: ORBIT AI CLINICAL ASSISTANT
+   ═══════════════════════════════════════════════════════════════════ */
+.ai-console-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glow);
+  border-radius: 16px;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 36px;
+}
+@media (max-width: 900px) {
+  .ai-console-card { grid-template-columns: 1fr; }
+}
+
+.ai-orb-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.ai-orb-core {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--neon-cyan) 0%, #0369a1 60%, transparent 100%);
+  filter: drop-shadow(0 0 24px rgba(0, 240, 255, 0.6));
+  animation: orbPulse 3s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 24px rgba(0, 240, 255, 0.6)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 36px rgba(0, 240, 255, 0.9)); }
+}
+
+.ai-chat-box {
+  display: flex;
+  flex-direction: column;
+  height: 380px;
+}
+.ai-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 8px;
+}
+.chat-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chat-bubble.ai {
+  background: rgba(0, 240, 255, 0.06);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  color: #e2e8f0;
+  align-self: flex-start;
+}
+.chat-bubble.user {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #fff;
+  align-self: flex-end;
+}
+.ai-prompt-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+}
+.prompt-chip {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.prompt-chip:hover {
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--neon-cyan);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.ai-input-bar {
+  display: flex;
+  gap: 10px;
+}
+.ai-input-field {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+.ai-input-field:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FOOTER DECK
+   ═══════════════════════════════════════════════════════════════════ */
+footer.mission-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 48px 0 32px;
+  margin-top: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<!-- Backdrop textures & ambient glow -->
+<div class="backdrop-layer"></div>
+<div class="ambient-bloom bloom-top-right"></div>
+<div class="ambient-bloom bloom-center-left"></div>
+<div class="ambient-bloom bloom-bottom"></div>
+
+<!-- Three.js Canvas: Page-long particle stream -->
+<canvas id="stream" aria-hidden="true"></canvas>
+
+<!-- Preloader Overlay -->
+<div id="preloader">
+  <div class="preloader-ring-box">
+    <svg class="preloader-svg" viewBox="0 0 140 140">
+      <circle class="preloader-circle-bg" cx="70" cy="70" r="65"></circle>
+      <circle id="preloader-progress" class="preloader-circle-fill" cx="70" cy="70" r="65"></circle>
+    </svg>
+    <div class="preloader-badge">
+      <span class="preloader-pct" id="preloader-pct">0%</span>
+    </div>
+  </div>
+  <div class="preloader-hud-text">EXPEDITION 07 · NASA ORBIT HEALTH PROTOCOL INITIALIZING</div>
+</div>
+
+<!-- Fixed Aerospace HUD Header -->
+<header class="hud-header">
+  <a href="#mission-deck" class="hud-brand">
+    <div class="hud-meatball">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+    </div>
+    <div class="hud-title-wrap">
+      <span class="hud-title">ORBIT HEALTH</span>
+      <span class="hud-subtitle">NASA EXPEDITION 07</span>
+    </div>
+  </a>
+
+  <nav class="hud-nav">
+    <a href="#mission-deck" class="hud-link active">Flight Deck</a>
+    <a href="#health-deck" class="hud-link">Health Telemetry</a>
+    <a href="#crew-deck" class="hud-link">Crew Roster</a>
+    <a href="#medical-deck" class="hud-link">Medical Bay</a>
+    <a href="#emergency-deck" class="hud-link">Emergency Center</a>
+    <a href="#ai-deck" class="hud-link">Orbit AI</a>
+  </nav>
+
+  <div class="hud-telemetry">
+    <div class="hud-pill">
+      <span class="pulse-dot"></span>
+      <span>408 KM · 7.66 KM/S</span>
+    </div>
+    <div class="hud-clock" id="live-utc-clock">00:00:00 UTC</div>
+  </div>
+</header>
+
+<main class="page-container">
+
+  <!-- ==============================================================
+       DECK 01: MISSION CONTROL HERO
+       ============================================================== -->
+  <section id="mission-deck" class="deck-section">
+    <div class="deck-eyebrow">FLIGHT DECK / EXPEDITION 07 · LOW EARTH ORBIT</div>
+    <div class="hero-layout">
+      <div>
+        <h1 class="deck-title-hero">
+          Earth, in view.<br/>
+          <em>Humanity, in focus.</em>
+        </h1>
+        <p class="deck-subhead">
+          Aerospace-grade clinical telemetry, physiological digital twin modeling, and autonomous healthcare designed to safeguard deep-space astronaut missions.
+        </p>
+        <div class="hero-actions">
+          <a href="#health-deck" class="btn-neon btn-neon-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Open Crew Monitor
+          </a>
+          <a href="#ai-deck" class="btn-neon btn-neon-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
+            Consult Orbit AI
+          </a>
+        </div>
+      </div>
+
+      <div class="card-glass">
+        <div class="deck-eyebrow" style="margin-bottom:8px;">ORBITAL STATUS</div>
+        <div style="font-family:var(--font-mono); font-size:32px; font-weight:800; color:#fff;">408 <small style="font-size:16px; color:var(--text-secondary);">KM</small></div>
+        <div style="font-size:12px; color:var(--neon-lime-bright); margin-top:2px;">● Low Earth Orbit · Inclination 51.6°</div>
+        
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-subtle); display:flex; flex-direction:column; gap:10px; font-family:var(--font-mono); font-size:11px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted);">COORDINATES</span>
+            <strong>ISS · 51.6° N / 0.0° E</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted);">ORBITAL VELOCITY</span>
+            <strong>7.66 KM/S (27,600 km/h)</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted);">MISSION ELAPSED</span>
+            <strong>126D 08H 42M</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted);">PERSONNEL ABOARD</span>
+            <strong style="color:var(--neon-cyan);">04 Astronauts (Nominal)</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cabin ECLSS Life Support Gauges -->
+    <div class="orbit-gauges-grid">
+      <div class="gauge-card">
+        <div class="gauge-label">Cabin Temperature</div>
+        <div class="gauge-val">22.1 <small>°C</small></div>
+        <div class="gauge-status"><span class="pulse-dot"></span> Optimal Band</div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-label">Cabin Pressure</div>
+        <div class="gauge-val">101.3 <small>kPa</small></div>
+        <div class="gauge-status"><span class="pulse-dot"></span> 1.00 ATM Nominal</div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-label">Oxygen Partial Pressure</div>
+        <div class="gauge-val">21.2 <small>kPa</small></div>
+        <div class="gauge-status"><span class="pulse-dot"></span> 20.9% Normal Air</div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-label">Cumulative Radiation</div>
+        <div class="gauge-val">1.2 <small>mSv</small></div>
+        <div class="gauge-status" style="color:var(--neon-amber);">● Within Safe Limit</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       DECK 02: HEALTH MONITORING & REAL-TIME TELEMETRY
+       ============================================================== -->
+  <section id="health-deck" class="deck-section">
+    <div class="deck-eyebrow">DECK 02 / REAL-TIME PHYSIOLOGICAL TELEMETRY</div>
+    <h2 class="deck-title">Signals from the <em>edge of space.</em></h2>
+    <p class="deck-subhead">Continuous multi-waveform telemetry monitoring cardiovascular rhythm, cerebral fluid distribution, and microgravity adaptation in real time.</p>
+
+    <!-- Crew Subject Switcher -->
+    <div class="crew-selector-bar">
+      <button class="crew-tab-btn active" onclick="switchCrewSubject(0)">
+        <div class="crew-tab-avatar">EV</div>
+        <div style="text-align:left;">
+          <div style="font-weight:700; font-size:12px;">Elena Vasquez</div>
+          <div style="font-size:10px; color:var(--text-muted);">Commander · 68 BPM</div>
+        </div>
+      </button>
+      <button class="crew-tab-btn" onclick="switchCrewSubject(1)">
+        <div class="crew-tab-avatar" style="color:var(--neon-amber);">MC</div>
+        <div style="text-align:left;">
+          <div style="font-weight:700; font-size:12px;">Dr. Marcus Chen</div>
+          <div style="font-size:10px; color:var(--text-muted);">Flight Surgeon · 82 BPM</div>
+        </div>
+      </button>
+      <button class="crew-tab-btn" onclick="switchCrewSubject(2)">
+        <div class="crew-tab-avatar">AO</div>
+        <div style="text-align:left;">
+          <div style="font-weight:700; font-size:12px;">Amara Okafor</div>
+          <div style="font-size:10px; color:var(--text-muted);">Specialist · 71 BPM</div>
+        </div>
+      </button>
+      <button class="crew-tab-btn" onclick="switchCrewSubject(3)">
+        <div class="crew-tab-avatar">LM</div>
+        <div style="text-align:left;">
+          <div style="font-weight:700; font-size:12px;">Luca Moretti</div>
+          <div style="font-size:10px; color:var(--text-muted);">Engineer · 64 BPM</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="telemetry-stage">
+      <!-- Live ECG Canvas Monitor -->
+      <div class="ecg-monitor-card">
+        <div class="ecg-top">
+          <div>
+            <span class="ecg-meta">LEAD II ECG TELEMETRY · 25 MM/S</span>
+            <div id="subject-name-label" style="font-weight:700; font-size:14px; margin-top:2px;">Commander Elena Vasquez</div>
+          </div>
+          <div class="ecg-controls">
+            <button id="sound-toggle-btn" class="sound-btn" onclick="toggleHeartSound()">AUDIO MUTE</button>
+            <span class="tag-ready">60 FPS SWEEP</span>
+          </div>
+        </div>
+
+        <canvas id="ecg-canvas" width="600" height="180"></canvas>
+
+        <div class="vitals-grid">
+          <div class="vital-item">
+            <div class="vital-label">Heart Rate</div>
+            <div class="vital-val lime" id="live-hr-val">68 <small style="font-size:14px;">BPM</small></div>
+          </div>
+          <div class="vital-item">
+            <div class="vital-label">Blood Oxygen (SpO₂)</div>
+            <div class="vital-val" id="live-spo2-val">98 <small style="font-size:14px;">%</small></div>
+          </div>
+          <div class="vital-item">
+            <div class="vital-label">Core Temperature</div>
+            <div class="vital-val amber" id="live-temp-val">36.8 <small style="font-size:14px;">°C</small></div>
+          </div>
+          <div class="vital-item">
+            <div class="vital-label">Optic Nerve Sheath (ONSD)</div>
+            <div class="vital-val" id="live-onsd-val">5.1 <small style="font-size:14px;">mm</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Digital Twin Silhouette -->
+      <div class="digital-twin-box">
+        <div class="deck-eyebrow" style="align-self:flex-start;">3D DIGITAL TWIN · ANATOMICAL HEATMAP</div>
+        
+        <svg class="body-silhouette-svg" viewBox="0 0 200 320" fill="none">
+          <!-- Body Outline -->
+          <circle cx="100" cy="35" r="22" stroke="rgba(0, 240, 255, 0.4)" stroke-width="1.5" fill="rgba(0, 240, 255, 0.04)"/>
+          <path d="M78 62 C78 58, 122 58, 122 62 L138 120 L128 175 L118 200 L122 300 L108 300 L102 210 L98 210 L92 300 L78 300 L82 200 L72 175 L62 120 Z" stroke="rgba(0, 240, 255, 0.4)" stroke-width="1.5" fill="rgba(0, 240, 255, 0.04)"/>
+          <!-- Pulsing Heart Beacon -->
+          <circle id="heart-pulse-node" class="heat-node" cx="106" cy="98" r="7"/>
+          <circle cx="106" cy="98" r="14" stroke="var(--neon-lime)" stroke-width="1" opacity="0.4"/>
+          <!-- Cerebral Flow -->
+          <circle cx="100" cy="35" r="5" fill="var(--neon-cyan)" opacity="0.8"/>
+          <!-- Scanning line -->
+          <line x1="40" y1="98" x2="160" y2="98" stroke="rgba(0, 240, 255, 0.3)" stroke-dasharray="4 4"/>
+        </svg>
+
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); text-align:center;">
+          CEPHALIC FLUID SHIFT: <strong style="color:var(--neon-lime-bright);">NOMINAL</strong><br/>
+          SANS RISK INDEX: <strong style="color:var(--neon-lime-bright);">LOW (0.12)</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       DECK 03: CREW ROSTER
+       ============================================================== -->
+  <section id="crew-deck" class="deck-section">
+    <div class="deck-eyebrow">DECK 03 / ASTRONAUT ROSTER &amp; BIOMETRIC PROFILES</div>
+    <h2 class="deck-title">Four voyagers. <em>One shared horizon.</em></h2>
+    <p class="deck-subhead">Expedition 07 personnel telemetry, cumulative spaceflight hours, and radiation dosimeter monitoring.</p>
+
+    <div class="crew-cards-grid">
+      <!-- Commander Elena Vasquez -->
+      <div class="astronaut-card">
+        <div class="card-header-flex">
+          <img src="./assets/signals/signals-face-1.png" class="astronaut-avatar-img" alt="Elena Vasquez">
+          <div>
+            <div class="astronaut-name">Elena Vasquez</div>
+            <div class="astronaut-role">Mission Commander · NASA</div>
+          </div>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>HEALTH STATUS</span>
+          <strong style="color:var(--neon-lime-bright);">NOMINAL (98/100)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>EVA DURATION</span>
+          <strong>24H 15M (3 EVAs)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>DOSIMETER</span>
+          <strong>0.28 mSv / 30D</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>SLEEP EFFICIENCY</span>
+          <strong>7H 42M (REM 28%)</strong>
+        </div>
+      </div>
+
+      <!-- Dr. Marcus Chen -->
+      <div class="astronaut-card">
+        <div class="card-header-flex">
+          <img src="./assets/signals/signals-face-2.png" class="astronaut-avatar-img" style="border-color:var(--neon-amber);" alt="Dr. Marcus Chen">
+          <div>
+            <div class="astronaut-name">Dr. Marcus Chen</div>
+            <div class="astronaut-role">Flight Surgeon · Space Medicine</div>
+          </div>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>HEALTH STATUS</span>
+          <strong style="color:var(--neon-amber);">ELEVATED WORKLOAD</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>EVA DURATION</span>
+          <strong>12H 40M (1 EVA)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>DOSIMETER</span>
+          <strong>0.34 mSv / 30D</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>SLEEP EFFICIENCY</span>
+          <strong>6H 18M (REM 19%)</strong>
+        </div>
+      </div>
+
+      <!-- Amara Okafor -->
+      <div class="astronaut-card">
+        <div class="card-header-flex">
+          <img src="./assets/signals/signals-face-3.png" class="astronaut-avatar-img" alt="Amara Okafor">
+          <div>
+            <div class="astronaut-name">Amara Okafor</div>
+            <div class="astronaut-role">Specialist · Orbital Robotics</div>
+          </div>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>HEALTH STATUS</span>
+          <strong style="color:var(--neon-lime-bright);">NOMINAL (99/100)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>EVA DURATION</span>
+          <strong>18H 22M (2 EVAs)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>DOSIMETER</span>
+          <strong>0.29 mSv / 30D</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>SLEEP EFFICIENCY</span>
+          <strong>8H 05M (REM 31%)</strong>
+        </div>
+      </div>
+
+      <!-- Luca Moretti -->
+      <div class="astronaut-card">
+        <div class="card-header-flex">
+          <img src="./assets/signals/signals-face-4.png" class="astronaut-avatar-img" alt="Luca Moretti">
+          <div>
+            <div class="astronaut-name">Luca Moretti</div>
+            <div class="astronaut-role">Systems Engineer · ECLSS</div>
+          </div>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>HEALTH STATUS</span>
+          <strong style="color:var(--neon-lime-bright);">NOMINAL (97/100)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>EVA DURATION</span>
+          <strong>15H 10M (2 EVAs)</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>DOSIMETER</span>
+          <strong>0.31 mSv / 30D</strong>
+        </div>
+        <div class="crew-telemetry-row">
+          <span>SLEEP EFFICIENCY</span>
+          <strong>7H 11M (REM 26%)</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       DECK 04: MEDICAL BAY & CLINICAL INVENTORY
+       ============================================================== -->
+  <section id="medical-deck" class="deck-section">
+    <div class="deck-eyebrow">DECK 04 / CLINICAL OPERATIONS &amp; MICROGRAVITY LAB</div>
+    <h2 class="deck-title">Care, prepared for the <em>unexpected.</em></h2>
+    <p class="deck-subhead">Autonomous diagnostic readiness, microgravity pharmaceuticals, and surgical reserve inventory.</p>
+
+    <div class="two-col-grid">
+      <!-- Equipment Readiness -->
+      <div class="card-glass">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="deck-eyebrow" style="margin-bottom:0;">EQUIPMENT INVENTORY · BAY A-01</div>
+          <span class="tag-ready">98% READINESS</span>
+        </div>
+
+        <table class="equipment-table">
+          <thead>
+            <tr>
+              <th>Device</th>
+              <th>Category</th>
+              <th>Qty</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Portable Ultrasound</strong></td>
+              <td style="color:var(--text-muted);">Diagnostic</td>
+              <td>02</td>
+              <td><span class="tag-ready">READY</span></td>
+            </tr>
+            <tr>
+              <td><strong>Defibrillator (AED)</strong></td>
+              <td style="color:var(--text-muted);">Life Support</td>
+              <td>02</td>
+              <td><span class="tag-ready">READY</span></td>
+            </tr>
+            <tr>
+              <td><strong>ECG Sensor Patches</strong></td>
+              <td style="color:var(--text-muted);">Telemetry</td>
+              <td>12</td>
+              <td><span class="tag-ready">READY</span></td>
+            </tr>
+            <tr>
+              <td><strong>Emergency O₂ Kit</strong></td>
+              <td style="color:var(--text-muted);">Life Support</td>
+              <td>04</td>
+              <td><span class="tag-ready">READY</span></td>
+            </tr>
+            <tr>
+              <td><strong>Trauma Surgical Consumables</strong></td>
+              <td style="color:var(--text-muted);">Surgical</td>
+              <td>08</td>
+              <td><span class="tag-ready">READY</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <button class="btn-neon btn-neon-secondary" style="margin-top:20px; width:100%; justify-content:center;" onclick="runDiagnosticsCheck()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Run Autonomous Diagnostic Check
+        </button>
+      </div>
+
+      <!-- Clinical Handover Log -->
+      <div class="card-glass">
+        <div class="deck-eyebrow">CARE RECORDS &amp; HANDOVER LOG</div>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:14px; font-size:13px;">
+          <div style="background:rgba(255,255,255,0.02); border-left:3px solid var(--neon-cyan); padding:10px 14px; border-radius:4px;">
+            <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">09:42 UTC · COMMANDER ELENA VASQUEZ</div>
+            <div style="font-weight:600; margin-top:2px;">Routine wellness telemetry audit verified nominal.</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); border-left:3px solid var(--neon-amber); padding:10px 14px; border-radius:4px;">
+            <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">08:15 UTC · DR. MARCUS CHEN</div>
+            <div style="font-weight:600; margin-top:2px;">Shift handoff: Scheduled post-EVA ultrasound scan at 14:00 UTC.</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); border-left:3px solid var(--neon-lime); padding:10px 14px; border-radius:4px;">
+            <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">YESTERDAY · AMARA OKAFOR</div>
+            <div style="font-weight:600; margin-top:2px;">Pharmaceutical radiation stability verified within 99.4% efficacy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       DECK 05: EMERGENCY CENTER
+       ============================================================== -->
+  <section id="emergency-deck" class="deck-section">
+    <div class="deck-eyebrow" style="color:var(--neon-red);">DECK 05 / EMERGENCY CLINICAL PROTOCOLS</div>
+    <h2 class="deck-title">Zero margin for <em>error.</em></h2>
+    <p class="deck-subhead">Air-gapped clinical decision support protocols for spaceflight medical contingencies.</p>
+
+    <div class="two-col-grid">
+      <!-- Protocols List -->
+      <div class="emergency-protocol-list">
+        <div class="protocol-item active" onclick="selectProtocol(0)">
+          <div class="protocol-title">
+            <span>🔴 Protocol 01: Cabin Depressurization &amp; DCS</span>
+            <small style="color:var(--neon-red); font-family:var(--font-mono);">CRITICAL</small>
+          </div>
+          <p class="protocol-steps">Rapid decompression countermeasure and 100% normobaric oxygen protocol.</p>
+        </div>
+
+        <div class="protocol-item" onclick="selectProtocol(1)">
+          <div class="protocol-title">
+            <span>🟠 Protocol 02: Acute Radiation Event (SPE Storm)</span>
+            <small style="color:var(--neon-amber); font-family:var(--font-mono);">WARNING</small>
+          </div>
+          <p class="protocol-steps">Solar particle storm shelter deployment and radioprotectant dosage.</p>
+        </div>
+
+        <div class="protocol-item" onclick="selectProtocol(2)">
+          <div class="protocol-title">
+            <span>🟡 Protocol 03: Cardiac Arrhythmia / Tachycardia</span>
+            <small style="color:var(--neon-amber); font-family:var(--font-mono);">URGENT</small>
+          </div>
+          <p class="protocol-steps">Emergency defibrillation sequence and antiarrhythmic administration.</p>
+        </div>
+
+        <div class="protocol-item" onclick="selectProtocol(3)">
+          <div class="protocol-title">
+            <span>🔵 Protocol 04: Space Adaptation Sickness (SAS)</span>
+            <small style="color:var(--neon-cyan); font-family:var(--font-mono);">STANDARD</small>
+          </div>
+          <p class="protocol-steps">Neurovestibular crisis mitigation and hydration re-equilibration.</p>
+        </div>
+      </div>
+
+      <!-- Protocol Execution Details -->
+      <div class="card-glass" id="protocol-details-card" style="border-color:rgba(239, 68, 68, 0.4);">
+        <div class="deck-eyebrow" style="color:var(--neon-red);" id="active-proto-eyebrow">PROTOCOL 01 EXECUTION</div>
+        <h3 id="active-proto-name" style="font-size:20px; font-weight:700; margin-bottom:14px;">Cabin Depressurization &amp; DCS</h3>
+        
+        <div id="protocol-steps-container" style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+          <!-- Injected via JS -->
+        </div>
+
+        <button class="btn-neon btn-neon-primary" style="margin-top:20px; width:100%; justify-content:center; background:var(--neon-red); color:#fff;" onclick="executeEmergencyProtocol()">
+          Execute Emergency Protocol Sequence
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       DECK 06: ORBIT AI CLINICAL ASSISTANT
+       ============================================================== -->
+  <section id="ai-deck" class="deck-section">
+    <div class="deck-eyebrow">DECK 06 / AUTONOMOUS CLINICAL INTELLIGENCE</div>
+    <h2 class="deck-title">The voice that <em>guards the crew.</em></h2>
+    <p class="deck-subhead">Autonomous AI telemetry synthesis, clinical triage guidance, and aerospace countermeasure prescriptions.</p>
+
+    <div class="ai-console-card">
+      <div class="ai-orb-wrap">
+        <div class="ai-orb-core"></div>
+        <div style="font-family:var(--font-mono); font-size:12px; font-weight:700; color:var(--neon-cyan); margin-top:20px;">ORBIT AI CORE</div>
+        <div style="font-size:10px; color:var(--neon-lime-bright); margin-top:4px;">● ONLINE · REASONING ENGINE</div>
+      </div>
+
+      <div class="ai-chat-box">
+        <div class="ai-chat-messages" id="chat-messages-container">
+          <div class="chat-bubble ai">
+            <strong>ORBIT AI:</strong> Good day, Commander. I am monitoring Expedition 07 physiological telemetry. All 4 crew members are within baseline safety tolerances. How may I assist your medical operations?
+          </div>
+        </div>
+
+        <div class="ai-prompt-chips">
+          <button class="prompt-chip" onclick="sendPrompt('Summarize crew wellness handover')">Summarize crew wellness</button>
+          <button class="prompt-chip" onclick="sendPrompt('Assess radiation exposure limits')">Assess radiation exposure</button>
+          <button class="prompt-chip" onclick="sendPrompt('Review SANS ocular countermeasures')">Review SANS ocular protocol</button>
+          <button class="prompt-chip" onclick="sendPrompt('Run EVA physiological fitness audit')">Run EVA fitness check</button>
+        </div>
+
+        <div class="ai-input-bar">
+          <input type="text" id="ai-input" class="ai-input-field" placeholder="Ask ORBIT AI a medical telemetry question..." onkeydown="if(event.key==='Enter') submitChatMessage()">
+          <button class="btn-neon btn-neon-primary" onclick="submitChatMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission Footer -->
+  <footer class="mission-footer">
+    <div>
+      <strong>NASA ORBIT HEALTH</strong> · Expedition 07 Medical Operations Platform
+    </div>
+    <div style="font-family:var(--font-mono); font-size:11px;">
+      ALT: 408 KM · VEL: 7.66 KM/S · SYSTEMS NOMINAL
+    </div>
+  </footer>
+
+</main>
+
+<!-- Interactive Logic -->
+<script>
+// 1. Preloader timing
+let progress = 0;
+const fill = document.getElementById('preloader-progress');
+const pct = document.getElementById('preloader-pct');
+const preloader = document.getElementById('preloader');
+
+const loadInterval = setInterval(() => {
+  progress += Math.floor(Math.random() * 12) + 6;
+  if (progress >= 100) {
+    progress = 100;
+    clearInterval(loadInterval);
+    setTimeout(() => {
+      preloader.classList.add('done');
+    }, 400);
+  }
+  const offset = 408 - (408 * (progress / 100));
+  fill.style.strokeDashoffset = offset;
+  pct.textContent = progress + '%';
+}, 60);
+
+// 2. Live UTC Clock
+function updateClock() {
+  const now = new Date();
+  const timeStr = now.toUTCString().split(' ')[4] + ' UTC';
+  document.getElementById('live-utc-clock').textContent = timeStr;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// 3. Crew Data and Subject Switcher
+const CREW_DATA = [
+  { name: 'Commander Elena Vasquez', hr: 68, spo2: 98, temp: '36.8', onsd: '5.1' },
+  { name: 'Dr. Marcus Chen', hr: 82, spo2: 97, temp: '37.1', onsd: '5.3' },
+  { name: 'Amara Okafor', hr: 71, spo2: 99, temp: '36.6', onsd: '4.9' },
+  { name: 'Luca Moretti', hr: 64, spo2: 98, temp: '36.7', onsd: '5.0' }
+];
+
+let activeCrewIdx = 0;
+
+function switchCrewSubject(idx) {
+  activeCrewIdx = idx;
+  const btns = document.querySelectorAll('.crew-tab-btn');
+  btns.forEach((b, i) => b.classList.toggle('active', i === idx));
+
+  const data = CREW_DATA[idx];
+  document.getElementById('subject-name-label').textContent = data.name;
+  document.getElementById('live-hr-val').innerHTML = data.hr + ' <small style="font-size:14px;">BPM</small>';
+  document.getElementById('live-spo2-val').innerHTML = data.spo2 + ' <small style="font-size:14px;">%</small>';
+  document.getElementById('live-temp-val').innerHTML = data.temp + ' <small style="font-size:14px;">°C</small>';
+  document.getElementById('live-onsd-val').innerHTML = data.onsd + ' <small style="font-size:14px;">mm</small>';
+}
+
+// 4. Real-time ECG Waveform Generator on Canvas
+const canvas = document.getElementById('ecg-canvas');
+const ctx = canvas.getContext('2d');
+let ecgX = 0;
+let points = [];
+const W = 600;
+const H = 180;
+const midY = H / 2;
+
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 25) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 25) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+}
+
+// ECG curve synthesis (P-Q-R-S-T)
+let beatPhase = 0;
+let audioCtx = null;
+let soundEnabled = false;
+
+function toggleHeartSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('sound-toggle-btn');
+  btn.textContent = soundEnabled ? 'AUDIO LIVE' : 'AUDIO MUTE';
+  btn.classList.toggle('active', soundEnabled);
+  if (soundEnabled && !audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playBeep() {
+  if (!soundEnabled || !audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+  } catch(e) {}
+}
+
+function getEcgY(phase) {
+  // P wave
+  if (phase > 0.15 && phase < 0.25) return midY - Math.sin((phase - 0.15) * 10 * Math.PI) * 10;
+  // Q wave
+  if (phase > 0.35 && phase < 0.38) return midY + 8;
+  // R peak
+  if (phase > 0.38 && phase < 0.44) {
+    if (phase > 0.40 && phase < 0.42 && Math.random() > 0.6) playBeep();
+    return midY - 60;
+  }
+  // S wave
+  if (phase > 0.44 && phase < 0.48) return midY + 16;
+  // T wave
+  if (phase > 0.60 && phase < 0.75) return midY - Math.sin((phase - 0.60) * (1 / 0.15) * Math.PI) * 14;
+  return midY + (Math.random() - 0.5) * 2;
+}
+
+function renderEcg() {
+  const currentBpm = CREW_DATA[activeCrewIdx].hr;
+  const speed = (currentBpm / 60) * 0.015;
+  beatPhase = (beatPhase + speed) % 1;
+
+  const y = getEcgY(beatPhase);
+  points.push({ x: ecgX, y });
+
+  ctx.fillStyle = 'rgba(1, 4, 10, 0.25)';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid();
+
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 2.2;
+  ctx.shadowColor = '#00f0ff';
+  ctx.shadowBlur = 8;
+
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    if (i === 0) ctx.moveTo(points[i].x, points[i].y);
+    else ctx.lineTo(points[i].x, points[i].y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ecgX += 2.5;
+  if (ecgX >= W) {
+    ecgX = 0;
+    points = [];
+  }
+
+  requestAnimationFrame(renderEcg);
+}
+drawGrid();
+renderEcg();
+
+// 5. Emergency Protocol Execution
+const PROTOCOLS = [
+  {
+    name: "Cabin Depressurization & DCS",
+    eyebrow: "PROTOCOL 01 EXECUTION",
+    steps: [
+      "1. Immediate emergency oxygen mask seal on all 4 crew members.",
+      "2. Initiate cabin bulkhead isolation to locate differential leak.",
+      "3. Increase suit pressure to 30 kPa to arrest nitrogen bubble evolution.",
+      "4. Prepare hyperbaric treatment table in Module 03."
+    ]
+  },
+  {
+    name: "Acute Radiation Event (SPE Storm)",
+    eyebrow: "PROTOCOL 02 EXECUTION",
+    steps: [
+      "1. Sound cabin radiation alarm and direct crew to aft Storm Shelter.",
+      "2. Position water storage bladders to maximize polyethylene shielding.",
+      "3. Dispense oral radioprotectants and dosimeter log audit.",
+      "4. Standby for solar proton flux reduction beacon."
+    ]
+  },
+  {
+    name: "Cardiac Arrhythmia / Tachycardia",
+    eyebrow: "PROTOCOL 03 EXECUTION",
+    steps: [
+      "1. Attach medical bay defibrillator pads (anterior-lateral).",
+      "2. Engage auto-rhythm analysis and prepare 150J biphasic shock.",
+      "3. Administer intravenous amiodarone under flight surgeon supervision.",
+      "4. Maintain telemetry uplink to Houston Medical Operations."
+    ]
+  },
+  {
+    name: "Space Adaptation Sickness (SAS)",
+    eyebrow: "PROTOCOL 04 EXECUTION",
+    steps: [
+      "1. Minimize rapid head motion along pitch/yaw axes.",
+      "2. Administer intramuscular promethazine 25mg.",
+      "3. Rehydrate with electrolyte oral solution.",
+      "4. Restrict active EVA tasks for 48 hours."
+    ]
+  }
+];
+
+function selectProtocol(idx) {
+  const items = document.querySelectorAll('.protocol-item');
+  items.forEach((it, i) => it.classList.toggle('active', i === idx));
+
+  const p = PROTOCOLS[idx];
+  document.getElementById('active-proto-eyebrow').textContent = p.eyebrow;
+  document.getElementById('active-proto-name').textContent = p.name;
+  
+  const container = document.getElementById('protocol-steps-container');
+  container.innerHTML = p.steps.map(s => `
+    <div style="background:rgba(255,255,255,0.02); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:10px;">
+      <input type="checkbox" style="accent-color:var(--neon-lime);">
+      <span>${s}</span>
+    </div>
+  `).join('');
+}
+selectProtocol(0);
+
+function executeEmergencyProtocol() {
+  alert('EMERGENCY COUNTERMEASURE SEQUENCE ACTIVATED: Telemetry beacon dispatched to NASA Flight Operations.');
+}
+
+function runDiagnosticsCheck() {
+  alert('AUTONOMOUS DIAGNOSTIC CHECK COMPLETED: All 5 medical bay systems report 98.4% operational readiness.');
+}
+
+// 6. Orbit AI Interactive Chat
+const AI_RESPONSES = {
+  "summarize crew wellness handover": "HANDOVER SUMMARY: Expedition 07 crew status is 98% nominal. Commander Elena Vasquez: HR 68 BPM, SpO2 98%, Sleep 7h 42m. Dr. Marcus Chen shows slight workload elevation (HR 82 BPM, Sleep 6h 18m). Special attention: post-EVA ultrasound scheduled for 14:00 UTC.",
+  "assess radiation exposure limits": "RADIATION TELEMETRY REPORT: Cumulative mission exposure is 1.2 mSv. Current cabin dose rate: 0.38 mSv/day. All 4 astronauts remain well below NASA career limits (600 mSv). Next solar monitoring pass in 42 minutes.",
+  "review sans ocular countermeasures": "SANS PROTOCOL: Astronauts are undergoing daily 2.5-hour lower-body negative pressure (LBNP) exercise to prevent cephalad fluid shifts. ONSD measurements (5.1 mm) confirm optic disk edema is nominal.",
+  "run eva physiological fitness audit": "EVA FITNESS AUDIT: Commander Vasquez and Specialist Okafor cleared for scheduled 6-hour orbital maintenance EVA. Vitals, cardiovascular reserve, and hydration levels meet Level-1 NASA EVA criteria."
+};
+
+function sendPrompt(text) {
+  document.getElementById('ai-input').value = text;
+  submitChatMessage();
+}
+
+function submitChatMessage() {
+  const input = document.getElementById('ai-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  const chatContainer = document.getElementById('chat-messages-container');
+
+  // User bubble
+  const userBubble = document.createElement('div');
+  userBubble.className = 'chat-bubble user';
+  userBubble.innerHTML = '<strong>ASTRONAUT:</strong> ' + query;
+  chatContainer.appendChild(userBubble);
+  input.value = '';
+
+  // AI thinking bubble
+  const aiBubble = document.createElement('div');
+  aiBubble.className = 'chat-bubble ai';
+  aiBubble.innerHTML = '<strong>ORBIT AI:</strong> <em>Synthesizing clinical flight telemetry...</em>';
+  chatContainer.appendChild(aiBubble);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  setTimeout(() => {
+    const key = query.toLowerCase();
+    let reply = "ORBIT AI: Query received and logged to Mission Control telemetry database. Astronaut vitals are continuously referenced against NASA clinical reference standards.";
+    for (const [k, v] of Object.entries(AI_RESPONSES)) {
+      if (key.includes(k) || k.includes(key)) {
+        reply = "<strong>ORBIT AI:</strong> " + v;
+        break;
+      }
+    }
+    aiBubble.innerHTML = reply;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }, 650);
+}
+</script>
+
+<!-- Three.js WebGL Particle Stream & Lenis Runtime Module -->
+<script type="module">
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SCROLL — Lenis (src/layouts/scroll-layout.tsx). Loaded lazily so the page
+   mounts without waiting on the CDN; the engine falls back to window.scrollY
+   until it is up.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const banner = (msg) => {
+  if (document.querySelector(".asset-banner")) return
+  const b = document.createElement("div")
+  b.className = "asset-banner"
+  b.setAttribute("role", "alert")
+  b.textContent = msg
+  document.body.appendChild(b)
+}
+const ASSET_BASE = "./assets"
+/* D-021: a runtime asset that fails to load must say so visibly */
+window.addEventListener("error", (e) => {
+  const t = e.target
+  if (t && t.tagName === "IMG" && t.src && t.src.indexOf("storage.getlayers.ai") >= 0) {
+    if (window.console) console.error("[relay] asset failed", t.src)
+    banner("Page assets failed to load — " + t.src + ". If this template is not published yet: node tools/sync-r2.mjs assets assets/relay-4ee0729d77")
+  }
+}, true)
+/* an image that failed before this module ran (modules are deferred) */
+Array.prototype.forEach.call(document.images, (img) => {
+  if (img.complete && img.naturalWidth === 0 && img.currentSrc && img.currentSrc.indexOf("storage.getlayers.ai") >= 0 && img.loading !== "lazy") {
+    if (window.console) console.error("[relay] asset failed", img.currentSrc)
+    banner("Page assets failed to load — " + img.currentSrc + ". If this template is not published yet: node tools/sync-r2.mjs assets assets/relay-4ee0729d77")
+  }
+})
+
+window.scrollTo(0, 0)
+import("lenis").then(({ default: Lenis }) => {
+  const lenis = new Lenis({ smoothWheel: true })
+  const raf = (time) => { lenis.raf(time); requestAnimationFrame(raf) }
+  requestAnimationFrame(raf)
+  R._attachLenis(lenis)
+}).catch((err) => {
+  if (window.console) console.error("[relay] lenis", err)
+  banner("Smooth scroll failed to load — https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs (" + err.message + "). The page scrolls natively.")
+})
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   THE PAGE-LONG PARTICLE STREAM — views/home/stream/stream-scene.ts,
+   stream-path.ts and particle-stream.tsx. An original GetLayers Scene Lab
+   scene: a ribbon of glowing filaments sweeping in S-curves down the whole
+   page, wrapped in sparks and out-of-focus bokeh, lime instead of cyan.
+   Additive soft billboards whose size and softness grow away from the focal
+   plane, then an UnrealBloom pass. The canvas is viewport-sized and fixed;
+   the stream lives in document coordinates — its spine is baked into a float
+   texture when the layout changes and mapped through the current scroll by
+   the shaders every frame. House contract: every look knob lives in CONFIG,
+   tint through the colour roles (--stream-*), never the shader.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const CONFIG = {
+  /** Particle budget of the full tier; the low tier draws `lowShare` of it. */
+  particles: 36000,
+  lowShare: 0.45,
+  strands: 44,
+  /** Flow speed along the curve, design px per second (Â±35% per particle). */
+  flowPx: 90,
+  /** Scrolling pushes the flow on: px along the curve per px scrolled
+      (either way), so the stream keeps running down while the page moves up. */
+  scrollFlow: 1.25,
+  /** Stream radius where it pinches and elsewhere, design px. On a tight
+      turn it is also held under `turnHold` Ã— the turn's radius, so the
+      strands never fold over each other. */
+  spread: 8,
+  spreadEnds: 190,
+  turnHold: 0.5,
+  /** Reach of a waypoint's pinch along the curve, design px. */
+  pinchReach: 300,
+  /** A swell that travels down the stream: Â± share of the radius,
+      wavelength (design px) and speed (rad/s). */
+  breath: 0.35,
+  breathWavelength: 900,
+  breathSpeed: 0.6,
+  spraySpread: 2.4,
+  /** Free-riding bokeh and dust: how far off the spine, Ã— the local spread. */
+  bokehSpread: 3.2,
+  dustSpread: 5.5,
+  /** Per-particle wander, design px. */
+  wobble: 4,
+  size: 2.1,
+  focal: 0.15,
+  dof: 0.55,
+  dofSize: 2.2,
+  twinkle: 2.4,
+  brightness: 0.79,
+  heat: 1.2,
+  /** Share of particles, and of filaments, woven in the second (blue) hue. */
+  altShare: 0.45,
+  altStrands: 0.32,
+  lineBase: 0.16,
+  lineSpread: 0.9,
+  /** Filament waves: wavelength and amplitude (Ã— spread), design px. */
+  lineWavelength: 1560,
+  lineWaveAmp: 0.22,
+  lineWaveSpeed: 0.25,
+  /** Light pulses running down the filaments: spacing and speed, design px. */
+  pulseSpacing: 1130,
+  pulseSpeed: 205,
+  pulseGain: 1.4,
+  /** Pulse shape: higher = shorter, sharper glow (a gaussian, not a saw). */
+  pulseSharp: 9,
+  parallax: 0.22,
+  /** Entrance: the head draws this far down the curve (design px) over revealMs. */
+  revealPx: 2600,
+  revealMs: 2200,
+  bloomStr: 0.68,
+  bloomRadius: 0.57,
+  bloomThresh: 0.07,
+}
+
+/** Spine samples — ~6 CSS px apart on a 1440 page. */
+const SAMPLES = 2048
+/** Filament vertices per strand — ~9 CSS px segments, so turns stay round. */
+const SEGMENTS = 1400
+const CAM_Z = 6
+const FOV = 35
+/** Damp for the pointer parallax, 1/s. */
+const DAMP = 3.2
+/** Turn radius: samples either side it is measured over, held over and
+    smoothed over, and the radius past which a stretch counts as straight. */
+const TURN_BASE = 12
+const TURN_HOLD = 28
+const TURN_SMOOTH = 48
+const TURN_OPEN = 1e4
+/** Far enough that the reveal head no longer hides anything. */
+const REVEALED = 1e7
+
+const DPR = { full: 1.35, low: 1.2 }
+/** The bloom's mip chain starts at this share of the frame on each tier. */
+const BLOOM_SCALE = { full: 1, low: 0.5 }
+const HALF_H = CAM_Z * Math.tan(((FOV / 2) * Math.PI) / 180)
+
+/** mulberry32 — seeded so the stream is the same on every load. */
+const rng = (seed) => () => {
+  seed |= 0
+  seed = (seed + 0x6d2b79f5) | 0
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+}
+
+/* Shared GLSL. The spine texture: row 0 = document px x / y, depth z,
+   pinch; row 1 = the unit in-page normal. `toScreen` maps a document point
+   through the scroll into aspect-space NDC; `toWorld` places it at its depth
+   so it still lands on that screen spot. */
+const CURVE_GLSL = /* glsl */ `
+  uniform sampler2D uCurve;
+  uniform float uHalfH, uCamZ, uPx, uLen;
+  uniform vec3 uView; // half viewport width, half height (CSS px), scrollY
+  vec4 curveRow(float u, float row) {
+    float x = clamp(u, 0.0, 1.0) * ${SAMPLES - 1}.0;
+    float i = floor(x);
+    float v = (row + 0.5) / 2.0;
+    vec4 a = texture2D(uCurve, vec2((i + 0.5) / ${SAMPLES}.0, v));
+    vec4 b = texture2D(uCurve, vec2((min(i + 1.0, ${SAMPLES - 1}.0) + 0.5) / ${SAMPLES}.0, v));
+    return mix(a, b, x - i);
+  }
+  // a point offset from the spine: o.x across it (design px), o.y in depth
+  vec3 onSpine(float u, vec2 o) {
+    vec4 p = curveRow(u, 0.0);
+    vec2 n = curveRow(u, 1.0).xy;
+    vec2 page = p.xy + n * o.x * uPx * uView.y;
+    return vec3(
+      (page.x - uView.x) / uView.y,
+      (uView.y - (page.y - uView.z)) / uView.y,
+      p.z + o.y * uPx
+    );
+  }
+  uniform float uTurnHold, uBreath, uBreathWave, uBreathSpeed, uTimeS;
+  // stream radius at u (design px): pinched, breathing, held under the turn
+  float widthAt(float u, float pinch, float narrow, float wide) {
+    float a = u * uLen;
+    float swell = 1.0 + uBreath * sin(a / uBreathWave * 6.2831 - uTimeS * uBreathSpeed);
+    float w = mix(wide, narrow, pinch) * swell;
+    // a soft min: a hard one kinks the outer strands where it takes over
+    float r = max(curveRow(u, 1.0).z * uTurnHold, 1.0);
+    return w * r / pow(pow(w, 4.0) + pow(r, 4.0), 0.25);
+  }
+  vec3 toWorld(vec3 s) {
+    float k = (uCamZ - s.z) / uCamZ;
+    return vec3(s.x * uHalfH * k, s.y * uHalfH * k, s.z);
+  }
+`
+
+const POINTS_VERT = /* glsl */ `
+  ${CURVE_GLSL}
+  attribute float aU;
+  attribute float aSeed;
+  attribute float aSize;
+  attribute float aKind;
+  attribute vec2 aOff;
+  uniform float uTime, uFlow, uScrollU, uRevealPx, uFadeIn, uFadeOut, uSpread,
+    uSpreadEnds, uSpray, uBokeh, uDust, uWobble, uSize, uScale, uFocal, uDof,
+    uDofSize, uTwinkle, uHeat, uAltShare;
+  uniform vec3 uColMain, uColAlt, uColCore, uColDeep, uColSpark;
+  varying vec3 vColor;
+  varying float vBlur;
+  void main() {
+    float ph = aSeed * 6.2831;
+    // stream (0) and spray (1) ride at speed; bokeh (2) and dust (3) drift
+    float speed = (aKind < 1.5 ? 1.0 : 0.3) * (0.65 + 0.7 * fract(aSeed * 7.13));
+    float u = fract(aU + uTime * uFlow * speed + uScrollU);
+    float pinch = curveRow(u, 0.0).w;
+    float spread = widthAt(u, pinch, uSpread, uSpreadEnds);
+    if (aKind > 2.5) spread *= uDust;
+    else if (aKind > 1.5) spread *= uBokeh;
+    else if (aKind > 0.5) spread *= uSpray;
+    vec2 o = aOff * spread
+      + vec2(sin(uTime * 0.7 + ph), cos(uTime * 0.6 + ph * 1.3)) * uWobble;
+    vec3 s = onSpine(u, o);
+    s.z += position.z; // bokeh sits toward the camera, dust away from it
+    float a = u * uLen;
+    float fade = smoothstep(0.0, uFadeIn, a) * smoothstep(uLen, uLen - uFadeOut, a)
+      * smoothstep(uRevealPx, uRevealPx - 220.0, a);
+    float heat = pinch * (aKind < 1.5 ? 1.0 : 0.3);
+    // a share of the motes carry the second hue
+    vec3 hue = fract(aSeed * 3.77) < uAltShare ? uColAlt : uColMain;
+    vec3 base = mix(uColDeep, hue, 0.55 + 0.45 * fract(aSeed * 5.31));
+    vec4 mv = modelViewMatrix * vec4(toWorld(s), 1.0);
+    float depth = -mv.z;
+    float blur = clamp(abs(depth - (uCamZ - uFocal)) * uDof, 0.0, 1.0);
+    if (aKind > 1.5 && aKind < 2.5) blur = max(blur, 0.8);
+    vBlur = blur;
+    float tw = 0.55 + 0.45 * sin(uTime * uTwinkle + ph);
+    vec3 c = mix(base, uColCore, clamp(heat * 0.85, 0.0, 1.0)) * (1.0 + heat * uHeat);
+    if (fract(aSeed * 13.7) < 0.05) c = uColSpark * 1.3;
+    // a blurred mote spreads the same light over a bigger disc
+    float spreadOut = 1.0 + blur * uDofSize;
+    vColor = c * fade * tw / (spreadOut * spreadOut);
+    gl_PointSize = uSize * aSize * uScale * (uCamZ / depth) * spreadOut;
+    gl_Position = projectionMatrix * mv;
+  }
+`
+
+const POINTS_FRAG = /* glsl */ `
+  uniform float uBright;
+  varying vec3 vColor;
+  varying float vBlur;
+  void main() {
+    float r = length(gl_PointCoord - 0.5) * 2.0;
+    if (r > 1.0) discard;
+    // sharp glint in focus, soft rimmed disc out of it
+    float glint = exp(-r * r * 6.0);
+    float disc = smoothstep(1.0, 0.6, r) * 0.5
+      + smoothstep(0.5, 0.92, r) * (1.0 - smoothstep(0.9, 1.0, r)) * 0.55;
+    gl_FragColor = vec4(vColor * mix(glint, disc, vBlur) * uBright, 1.0);
+  }
+`
+
+const LINES_VERT = /* glsl */ `
+  ${CURVE_GLSL}
+  attribute float aU;
+  attribute vec4 aStrand; // x normal offset, y depth offset, z phase, w end
+  uniform float uTime, uRevealPx, uFadeIn, uFadeOut, uSpread, uSpreadEnds,
+    uLineSpread, uLineWavelength, uLineWaveAmp, uLineWaveSpeed, uPulseGain,
+    uLineBase, uHeat, uAltStrands;
+  uniform vec3 uColMain, uColAlt, uColCore, uColDeep;
+  varying vec3 vColor;
+  varying vec3 vPulse;
+  varying float vA;
+  varying float vPhase;
+  void main() {
+    float u = aU;
+    float a = u * uLen;
+    float pinch = curveRow(u, 0.0).w;
+    float spread = widthAt(u, pinch, uSpread, uSpreadEnds) * uLineSpread;
+    float wave = sin(a / uLineWavelength * 6.2831 + aStrand.z + uTime * uLineWaveSpeed) * uLineWaveAmp;
+    vec3 s = onSpine(u, vec2(aStrand.x + wave, aStrand.y) * spread);
+    float fade = smoothstep(0.0, uFadeIn, a) * smoothstep(uLen * aStrand.w, uLen * aStrand.w - uFadeOut, a)
+      * smoothstep(uRevealPx, uRevealPx - 260.0, a);
+    // a share of the strands run in the second hue
+    vec3 hue = fract(aStrand.z * 1.618) < uAltStrands ? uColAlt : uColMain;
+    vec3 c = mix(mix(uColDeep, hue, 0.75), uColCore, pinch * 0.6);
+    vColor = c * fade * uLineBase * (1.0 + pinch * uHeat);
+    vPulse = c * fade * uPulseGain;
+    // the pulse is placed per fragment from the arc length — per vertex it
+    // hopped from vertex to vertex
+    vA = a;
+    vPhase = aStrand.z;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(toWorld(s), 1.0);
+  }
+`
+
+const LINES_FRAG = /* glsl */ `
+  uniform float uBright, uPulseSpacing, uPulseShift, uPulseSharp;
+  varying vec3 vColor;
+  varying vec3 vPulse;
+  varying float vA;
+  varying float vPhase;
+  void main() {
+    float p = fract((vA - uPulseShift) / uPulseSpacing + vPhase) - 0.5;
+    float pulse = exp(-p * p * uPulseSharp * uPulseSharp);
+    gl_FragColor = vec4((vColor + vPulse * pulse) * uBright, 1.0);
+  }
+`
+
+const easeOut = (t) => 1 - Math.pow(1 - t, 3)
+
+/* â”€â”€ the path (stream-path.ts): waypoints anchored to the page's blocks â”€â”€ */
+/** Hero, per frame: in from above the top right, down-left behind the glass
+    window, turning just left of it (the hot pinch), then back right toward
+    the Integrations tile row. */
+const HERO = {
+  1440: [
+    { at: "hero", x: 1.14, y: -0.46, z: -2.6 },
+    { at: "hero", x: 0.84, y: 0.02, z: -1.8 },
+    { at: "hero", x: 0.5, y: 0.3, z: -0.9 },
+    { at: "hero", x: 0.22, y: 0.66, z: 0, pinch: 1 },
+  ],
+  1024: [
+    { at: "hero", x: 1.08, y: -0.4, z: -2.6 },
+    { at: "hero", x: 0.86, y: 0.03, z: -1.8 },
+    { at: "hero", x: 0.5, y: 0.35, z: -0.9 },
+    { at: "hero", x: 0.22, y: 0.7, z: 0, pinch: 1 },
+  ],
+  768: [
+    { at: "hero", x: 1.08, y: 0.12, z: -2.4 },
+    { at: "hero", x: 0.8, y: 0.4, z: -1.6 },
+    { at: "hero", x: 0.3, y: 0.6, z: -0.8 },
+    { at: "hero", x: -0.02, y: 0.8, z: 0, pinch: 1 },
+  ],
+  390: [
+    { at: "hero", x: 1.1, y: 0.2, z: -2.4 },
+    { at: "hero", x: 0.75, y: 0.45, z: -1.6 },
+    { at: "hero", x: 0.25, y: 0.65, z: -0.8 },
+    { at: "hero", x: -0.02, y: 0.84, z: 0, pinch: 1 },
+  ],
+}
+/** Below the hero, shared by every frame: the S back right through the gap
+    between two Integrations tiles, then few, wide bends, and a sweep out
+    through the left edge above the footer. Values are before `SHIFT`. */
+const TAIL = [
+  { at: "integrations", x: 0.48, y: -0.25, z: 0 },
+  { at: "integrations", x: 0.605, y: 0.54, z: -0.2 },
+  { at: "product", x: 0.5, y: 0.12, z: 0.2 },
+  { at: "product", x: -0.06, y: 0.5, z: 0.2, pinch: 1 },
+  { at: "statement", x: 0.5, y: 0.3, z: -0.5 },
+  { at: "scale", x: 0.92, y: 0.9, z: 0.2, pinch: 1 },
+  { at: "signals", x: 0.4, y: 0.75, z: -0.4 },
+  { at: "proof", x: -0.06, y: 0.6, z: 0.2, pinch: 1 },
+  { at: "pricing", x: 0.46, y: -0.1, z: -0.2 },
+  { at: "pricing", x: 0.96, y: 0.35, z: 0.1, pinch: 0.8 },
+  { at: "pricing", x: 0.48, y: 0.85, z: 0 },
+  { at: "pricing", x: -0.49, y: 1.04, z: 0 },
+]
+const PATH = {
+  1440: [...HERO[1440], ...TAIL],
+  1024: [...HERO[1024], ...TAIL],
+  768: [...HERO[768], ...TAIL],
+  390: [...HERO[390], ...TAIL],
+}
+/** The whole form sits this share of the column right of its waypoints —
+    200px at 1440 (client call), scaling with the column elsewhere. */
+const SHIFT = 200 / 1440
+
+/** The block a section flows in: itself, or the parent of a sticky layer. */
+const blockOf = (el) => {
+  let block = el
+  for (let node = el; node && node.tagName !== "MAIN"; node = node.parentElement) {
+    if (getComputedStyle(node).position === "sticky" && node.parentElement) block = node.parentElement
+  }
+  return block
+}
+/** Document top, from layout offsets — immune to scroll-driven transforms. */
+const docTop = (el) => {
+  let y = 0
+  for (let node = el; node; node = node.offsetParent instanceof HTMLElement ? node.offsetParent : null) y += node.offsetTop
+  return y
+}
+/** Waypoints → document px against the live layout. Points whose section is
+    missing are skipped, so the stream survives a section being removed. */
+const resolvePath = (waypoints, main) => {
+  const column = main.getBoundingClientRect()
+  const points = []
+  for (const { at, x, y, z, pinch = 0 } of waypoints) {
+    const section = document.getElementById(at)
+    if (!section) continue
+    const block = blockOf(section)
+    points.push({ x: column.left + (x + SHIFT) * column.width, y: docTop(block) + y * block.offsetHeight, z, pinch })
+  }
+  return points
+}
+
+/* â”€â”€ orchestration (particle-stream.tsx) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+const COARSE = "(hover: none) and (pointer: coarse)"
+const FINE = "(hover: hover) and (pointer: fine)"
+const REDUCE = "(prefers-reduced-motion: reduce)"
+/** The frame reduced motion shows: the stream fully drawn, frozen mid-flow. */
+const STILL_MS = 24000
+/** Frame budget: none — the stream draws on every display frame everywhere
+    (a phone cap read as a choppy stream while scrolling); the phone pays with
+    the low tier's cheaper frame instead. */
+const NO_GAP = () => 0
+/** The particle stream starts drawing itself in, with the hero's first node (LOAD.stream). */
+const LOAD_STREAM = 416
+const readTier = () => (window.matchMedia(COARSE).matches || window.innerWidth <= 900 ? "low" : "full")
+const yieldToMain = () => new Promise((resolve) => {
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(() => resolve(), { timeout: 800 })
+  else window.setTimeout(resolve, 0)
+})
+/** The four colour roles come from the `--stream-*` tokens. */
+const readColors = (el) => {
+  const style = getComputedStyle(el)
+  const token = (name) => style.getPropertyValue(name).trim()
+  return { colMain: token("--stream-main"), colAlt: token("--stream-alt"), colCore: token("--stream-core"), colDeep: token("--stream-deep"), colSpark: token("--stream-spark") }
+}
+
+/* â”€â”€ a viewport height that does not follow the mobile toolbar (utils/stable-viewport.ts):
+   the canvas is the LARGE viewport tall, measured once in CSS px; on a touch
+   device a resize that keeps the width is the toolbar and is ignored, a
+   rotation re-measures at once and again 300 ms later. */
+const isTouchViewport = () => window.matchMedia("(pointer: coarse)").matches ||
+  (navigator.maxTouchPoints > 0 && /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent))
+const largeViewportHeight = () => {
+  const probe = document.createElement("div")
+  probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none"
+  document.body.appendChild(probe)
+  const lvh = probe.getBoundingClientRect().height
+  probe.remove()
+  return Math.round(Math.max(lvh, window.innerHeight))
+}
+const ROTATION_SETTLE_MS = 300
+const stableViewport = (() => {
+  let width = window.innerWidth, height = 0, timer
+  const listeners = new Set()
+  const publish = (h) => { if (h === height) return; height = h; listeners.forEach((l) => l()) }
+  window.addEventListener("resize", () => {
+    const w = window.innerWidth
+    if (isTouchViewport() && w === width) return
+    width = w
+    publish(largeViewportHeight())
+    clearTimeout(timer)
+    timer = setTimeout(() => publish(largeViewportHeight()), ROTATION_SETTLE_MS)
+  }, { passive: true })
+  return { get: () => height, subscribe: (l) => { listeners.add(l); return () => listeners.delete(l) }, init: () => publish(largeViewportHeight()) }
+})()
+
+const canvas = document.getElementById("stream")
+if (canvas && !R.isBot()) {
+  /* the box: the CSS 100lvh until measured, then a locked px height */
+  const lockBox = () => { const h = stableViewport.get(); if (h > 0) canvas.style.height = h + "px" }
+  stableViewport.subscribe(lockBox)
+  stableViewport.init()
+  lockBox()
+}
+/* When the stream may start building: everywhere once the preloader has gone;
+   on a desktop (full tier, fine pointer) already at `load`, under the
+   preloader's last beat, so it is compiled and warm before the first scroll.
+   It neither renders nor reveals before the preloader has gone. */
+const whenBuildable = (start) => {
+  let started = false
+  const go = () => { if (started) return; started = true; start() }
+  R.onReleased(go)
+  if (readTier() === "full" && window.matchMedia(FINE).matches) {
+    if (document.readyState === "complete") go()
+    else window.addEventListener("load", go, { once: true })
+  }
+}
+if (canvas && !R.isBot()) whenBuildable(() => {
+  const THREE_URL = "./vendor/three.module.js"
+  yieldToMain().then(() => Promise.all([
+    import("three"),
+    import("three/addons/postprocessing/EffectComposer.js"),
+    import("three/addons/postprocessing/OutputPass.js"),
+    import("three/addons/postprocessing/RenderPass.js"),
+    import("three/addons/postprocessing/UnrealBloomPass.js"),
+  ])).then(async ([T, { EffectComposer }, { OutputPass }, { RenderPass }, { UnrealBloomPass }]) => {
+    const { AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color, DataTexture, FloatType, LineSegments, Mesh, NearestFilter, PerspectiveCamera, PlaneGeometry, Points, RGBAFormat, Scene, ShaderMaterial, Vector2, Vector3, WebGLRenderer } = T
+
+    /** The scene: one renderer, one Points + one LineSegments draw, bloom,
+        output pass. Sized for the full tier once; the low tier only narrows
+        draw ranges and DPR (`retune`), so no program compiles after init. */
+    class StreamScene {
+      constructor(canvas, colors) {
+        this.scene = new Scene()
+        this.camera = new PerspectiveCamera(FOV, 1, 0.1, 60)
+        this.curveData = new Float32Array(SAMPLES * 2 * 4)
+        this.curve = new DataTexture(this.curveData, SAMPLES, 2, RGBAFormat, FloatType)
+        this.shared = {
+          uCurve: { value: this.curve },
+          uHalfH: { value: HALF_H },
+          uCamZ: { value: CAM_Z },
+          uPx: { value: 1 },
+          uLen: { value: 1 },
+          uView: { value: new Vector3(1, 1, 0) },
+          uTime: { value: 0 },
+          uTimeS: { value: 0 },
+          uTurnHold: { value: CONFIG.turnHold },
+          uBreath: { value: CONFIG.breath },
+          uBreathWave: { value: CONFIG.breathWavelength },
+          uBreathSpeed: { value: CONFIG.breathSpeed },
+          uRevealPx: { value: 0 },
+          uFadeIn: { value: 120 },
+          uFadeOut: { value: 400 },
+          uSpread: { value: CONFIG.spread },
+          uSpreadEnds: { value: CONFIG.spreadEnds },
+          uHeat: { value: CONFIG.heat },
+          uBright: { value: CONFIG.brightness },
+          uColMain: { value: new Color() },
+          uColAlt: { value: new Color() },
+          uAltShare: { value: CONFIG.altShare },
+          uColCore: { value: new Color() },
+          uColDeep: { value: new Color() },
+          uColSpark: { value: new Color() },
+        }
+        this.path = []
+        this.tier = "full"
+        this.width = 1
+        this.height = 1
+        this.unit = 1
+        this.scrollY = 0
+        this.lastScroll = Number.NaN
+        this.scrollPx = 0
+        this.revealStart = -1
+        this.pointer = new Vector2()
+        this.look = new Vector2()
+        this.lastTime = -1
+
+        this.renderer = new WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" })
+        this.renderer.setClearColor(0x000000, 1)
+        this.camera.position.set(0, 0, CAM_Z)
+        this.curve.magFilter = NearestFilter
+        this.curve.minFilter = NearestFilter
+        this.setColors(colors)
+
+        this.pointsMat = new ShaderMaterial({
+          uniforms: {
+            ...this.shared,
+            uFlow: { value: 0 },
+            uScrollU: { value: 0 },
+            uSpray: { value: CONFIG.spraySpread },
+            uBokeh: { value: CONFIG.bokehSpread },
+            uDust: { value: CONFIG.dustSpread },
+            uWobble: { value: CONFIG.wobble },
+            uSize: { value: CONFIG.size },
+            uScale: { value: 1 },
+            uFocal: { value: CONFIG.focal },
+            uDof: { value: CONFIG.dof },
+            uDofSize: { value: CONFIG.dofSize },
+            uTwinkle: { value: CONFIG.twinkle },
+          },
+          vertexShader: POINTS_VERT,
+          fragmentShader: POINTS_FRAG,
+          blending: AdditiveBlending,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+        })
+        this.linesMat = new ShaderMaterial({
+          uniforms: {
+            ...this.shared,
+            uPulseShift: { value: 0 },
+            uPulseSharp: { value: CONFIG.pulseSharp },
+            uAltStrands: { value: CONFIG.altStrands },
+            uLineSpread: { value: CONFIG.lineSpread },
+            uLineWavelength: { value: CONFIG.lineWavelength },
+            uLineWaveAmp: { value: CONFIG.lineWaveAmp },
+            uLineWaveSpeed: { value: CONFIG.lineWaveSpeed },
+            uPulseSpacing: { value: CONFIG.pulseSpacing },
+            uPulseGain: { value: CONFIG.pulseGain },
+            uLineBase: { value: CONFIG.lineBase },
+          },
+          vertexShader: LINES_VERT,
+          fragmentShader: LINES_FRAG,
+          blending: AdditiveBlending,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+        })
+
+        this.points = new Points(this.buildPoints(), this.pointsMat)
+        this.lines = new LineSegments(this.buildLines(), this.linesMat)
+        this.points.frustumCulled = false
+        this.lines.frustumCulled = false
+        this.scene.add(this.lines, this.points)
+
+        this.composer = new EffectComposer(this.renderer)
+        this.composer.addPass(new RenderPass(this.scene, this.camera))
+        this.bloom = new UnrealBloomPass(new Vector2(1, 1), CONFIG.bloomStr, CONFIG.bloomRadius, CONFIG.bloomThresh)
+        this.composer.addPass(this.bloom)
+        this.output = new OutputPass()
+        this.composer.addPass(this.output)
+      }
+
+      /** Particles: stream 79%, spray 14%, bokeh 3%, dust 4% — all ride the spine. */
+      buildPoints() {
+        const total = CONFIG.particles
+        const rand = rng(0x5eed1e)
+        const gauss = () => rand() + rand() + rand() + rand() - 2
+        const pos = new Float32Array(total * 3)
+        const u = new Float32Array(total)
+        const seed = new Float32Array(total)
+        const size = new Float32Array(total)
+        const kind = new Float32Array(total)
+        const off = new Float32Array(total * 2)
+        for (let i = 0; i < total; i++) {
+          const pick = rand()
+          const k = pick < 0.79 ? 0 : pick < 0.93 ? 1 : pick < 0.96 ? 2 : 3
+          kind[i] = k
+          u[i] = rand()
+          seed[i] = rand()
+          off[i * 2] = gauss() * 0.5
+          off[i * 2 + 1] = gauss() * 0.5
+          if (k === 0) size[i] = 0.35 + Math.pow(rand(), 4) * 2.4
+          else if (k === 1) size[i] = 0.3 + rand() * 0.6
+          else if (k === 2) {
+            size[i] = 1.2 + rand() * 1.6
+            pos[i * 3 + 2] = 1.0 + rand() * 1.4
+          } else {
+            size[i] = 0.25 + rand() * 0.4
+            pos[i * 3 + 2] = -1.2 + rand() * 1.0
+          }
+        }
+        const g = new BufferGeometry()
+        g.setAttribute("position", new BufferAttribute(pos, 3))
+        g.setAttribute("aU", new BufferAttribute(u, 1))
+        g.setAttribute("aSeed", new BufferAttribute(seed, 1))
+        g.setAttribute("aSize", new BufferAttribute(size, 1))
+        g.setAttribute("aKind", new BufferAttribute(kind, 1))
+        g.setAttribute("aOff", new BufferAttribute(off, 2))
+        return g
+      }
+
+      /** Filaments: `strands` polylines along the spine, one draw as segments. */
+      buildLines() {
+        const n = CONFIG.strands
+        const verts = n * (SEGMENTS + 1)
+        const rand = rng(0xf11a)
+        const u = new Float32Array(verts)
+        const strand = new Float32Array(verts * 4)
+        const index = new Uint32Array(n * SEGMENTS * 2)
+        let w = 0
+        for (let s = 0; s < n; s++) {
+          const nx = (rand() - 0.5) * 2
+          const nz = (rand() - 0.5) * 1.2
+          const phase = rand() * 6.2831
+          const end = 0.93 + rand() * 0.07
+          for (let i = 0; i <= SEGMENTS; i++) {
+            const v = s * (SEGMENTS + 1) + i
+            u[v] = i / SEGMENTS
+            strand.set([nx, nz, phase, end], v * 4)
+            if (i < SEGMENTS) { index[w++] = v; index[w++] = v + 1 }
+          }
+        }
+        const g = new BufferGeometry()
+        g.setAttribute("position", new BufferAttribute(new Float32Array(verts * 3), 3))
+        g.setAttribute("aU", new BufferAttribute(u, 1))
+        g.setAttribute("aStrand", new BufferAttribute(strand, 4))
+        g.setIndex(new BufferAttribute(index, 1))
+        return g
+      }
+
+      /** Bake the spine through the resolved waypoints: document px position,
+          depth, the pinch profile and the in-page normal. */
+      bakeCurve() {
+        if (this.path.length < 2) return
+        const curve = new CatmullRomCurve3(this.path.map(({ x, y, z }) => new Vector3(x, y, z)), false, "centripetal")
+        const length = Math.max(1, curve.getLength())
+        const tangent = new Vector3()
+        const samples = []
+        const angles = []
+        for (let i = 0; i < SAMPLES; i++) {
+          const p = curve.getPointAt(i / (SAMPLES - 1))
+          samples.push(p)
+          curve.getTangentAt(i / (SAMPLES - 1), tangent)
+          angles.push(Math.atan2(tangent.y, tangent.x))
+        }
+        const step = length / (SAMPLES - 1)
+        const at = (i) => Math.min(SAMPLES - 1, Math.max(0, i))
+        const radius = angles.map((_, i) => {
+          let turn = Math.abs(angles[at(i + TURN_BASE)] - angles[at(i - TURN_BASE)])
+          if (turn > Math.PI) turn = 2 * Math.PI - turn
+          const r = (2 * TURN_BASE * step) / Math.max(1e-4, turn)
+          return Math.min(TURN_OPEN, r / this.unit)
+        })
+        const slideMin = (values, reach) => values.map((_, i) => {
+          let m = Infinity
+          for (let j = i - reach; j <= i + reach; j++) { const v = values[at(j)]; if (v < m) m = v }
+          return m
+        })
+        const slideMean = (values, reach) => values.map((_, i) => {
+          let sum = 0
+          for (let j = i - reach; j <= i + reach; j++) sum += values[at(j)]
+          return sum / (2 * reach + 1)
+        })
+        const held = slideMean(slideMean(slideMin(radius, TURN_HOLD), TURN_SMOOTH), TURN_SMOOTH)
+        angles.forEach((angle, i) => { this.curveData.set([-Math.sin(angle), Math.cos(angle), held[i], 0], (SAMPLES + i) * 4) })
+        const peaks = this.path.filter(({ pinch }) => pinch > 0).map(({ x, y, pinch }) => {
+          let best = 0, bestD = Infinity
+          samples.forEach((p, i) => { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bestD) { bestD = d; best = i } })
+          return { at: best / (SAMPLES - 1), pinch }
+        })
+        const reach = CONFIG.pinchReach * this.unit
+        samples.forEach((p, i) => {
+          const at = i / (SAMPLES - 1)
+          let pinch = 0
+          for (const peak of peaks) { const d = ((at - peak.at) * length) / reach; pinch = Math.max(pinch, peak.pinch * Math.exp(-d * d)) }
+          this.curveData.set([p.x, p.y, p.z, pinch], i * 4)
+        })
+        this.curve.needsUpdate = true
+        this.shared.uLen.value = length
+        this.shared.uFadeOut.value = Math.min(length / 4, 400 * this.unit)
+        this.pointsMat.uniforms.uFlow.value = (CONFIG.flowPx * this.unit) / length
+      }
+
+      /** Tint through the colour roles — never the shader. */
+      setColors(colors) {
+        this.shared.uColMain.value.set(colors.colMain)
+        this.shared.uColAlt.value.set(colors.colAlt)
+        this.shared.uColCore.value.set(colors.colCore)
+        this.shared.uColDeep.value.set(colors.colDeep)
+        this.shared.uColSpark.value.set(colors.colSpark)
+      }
+      setPath(path) { this.path = path; this.bakeCurve() }
+      /** Device tier: DPR and draw ranges only — never a define or a rebuild. */
+      retune(tier) {
+        this.tier = tier
+        const share = tier === "low" ? CONFIG.lowShare : 1
+        this.points.geometry.setDrawRange(0, Math.floor(CONFIG.particles * share))
+        const strands = Math.ceil(CONFIG.strands * (tier === "low" ? 0.6 : 1))
+        this.lines.geometry.setDrawRange(0, strands * SEGMENTS * 2)
+        this.resize(this.width, this.height)
+      }
+      /** Viewport size, CSS px. */
+      resize(width, height) {
+        this.width = Math.max(1, width)
+        this.height = Math.max(1, height)
+        const dpr = Math.min(window.devicePixelRatio || 1, DPR[this.tier])
+        this.renderer.setPixelRatio(dpr)
+        this.renderer.setSize(this.width, this.height, false)
+        this.composer.setPixelRatio(dpr)
+        this.composer.setSize(this.width, this.height)
+        const bloomScale = BLOOM_SCALE[this.tier]
+        if (bloomScale !== 1) this.bloom.setSize(Math.ceil(this.width * dpr * bloomScale), Math.ceil(this.height * dpr * bloomScale))
+        this.camera.aspect = this.width / this.height
+        this.camera.updateProjectionMatrix()
+        this.unit = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16
+        this.pointsMat.uniforms.uScale.value = this.unit * dpr
+        this.shared.uPx.value = this.unit / (this.height / 2)
+        this.shared.uFadeIn.value = 120 * this.unit
+        const lines = this.linesMat.uniforms
+        lines.uLineWavelength.value = CONFIG.lineWavelength * this.unit
+        lines.uPulseSpacing.value = CONFIG.pulseSpacing * this.unit
+        this.shared.uBreathWave.value = CONFIG.breathWavelength * this.unit
+        this.bakeCurve()
+      }
+      /** Page scroll, CSS px: moves the view, and pushes the flow on either way. */
+      setScroll(y) {
+        if (!Number.isNaN(this.lastScroll)) this.scrollPx += Math.abs(y - this.lastScroll) * CONFIG.scrollFlow
+        this.lastScroll = y
+        this.scrollY = y
+      }
+      setPointer(x, y) { this.pointer.set(x, y) }
+      /** Start the entrance: the stream draws itself in down the curve. */
+      reveal(now, instant = false) { this.revealStart = instant ? now - CONFIG.revealMs : now }
+      /** Compile every program and draw one (empty) frame before the reveal. */
+      async prewarm() {
+        /* compileAsync for every program, then the first draws in two tasks:
+           the stream's own programs straight to the canvas (nothing revealed
+           yet, so it draws black), then the composer's passes and targets */
+        await this.renderer.compileAsync(this.scene, this.camera)
+        const passes = new Scene()
+        const quad = new PlaneGeometry(2, 2)
+        const materials = [this.bloom.materialHighPassFilter, ...this.bloom.separableBlurMaterials, this.bloom.compositeMaterial, this.bloom.blendMaterial, this.output.material, this.composer.copyPass.material]
+        for (const material of materials) passes.add(new Mesh(quad, material))
+        await this.renderer.compileAsync(passes, this.camera)
+        quad.dispose()
+        await yieldToMain()
+        this.renderer.render(this.scene, this.camera)
+        await yieldToMain()
+        this.render(performance.now())
+      }
+      render(now) {
+        const dt = this.lastTime < 0 ? 0 : Math.min(0.1, Math.max(0, (now - this.lastTime) / 1000))
+        this.lastTime = now
+        const k = 1 - Math.exp(-DAMP * dt)
+        this.look.lerp(this.pointer, k)
+        this.camera.position.set(-this.look.x * CONFIG.parallax, this.look.y * CONFIG.parallax, CAM_Z)
+        this.camera.lookAt(0, 0, 0)
+        const t = this.revealStart < 0 ? 0 : Math.min(1, (now - this.revealStart) / CONFIG.revealMs)
+        this.shared.uRevealPx.value = t >= 1 ? REVEALED : easeOut(t) * CONFIG.revealPx * this.unit
+        this.shared.uTime.value = now / 1000
+        this.shared.uTimeS.value = (now / 1000) % 1000
+        this.shared.uView.value.set(this.width / 2, this.height / 2, this.scrollY)
+        const length = this.shared.uLen.value
+        this.pointsMat.uniforms.uScrollU.value = (this.scrollPx / length) % 1
+        const spacing = CONFIG.pulseSpacing * this.unit
+        this.linesMat.uniforms.uPulseShift.value = ((now / 1000) * CONFIG.pulseSpeed * this.unit + this.scrollPx) % spacing
+        this.composer.render(dt)
+      }
+      dispose() {
+        this.points.geometry.dispose(); this.lines.geometry.dispose()
+        this.pointsMat.dispose(); this.linesMat.dispose(); this.curve.dispose()
+        this.bloom.dispose(); this.composer.dispose(); this.renderer.dispose()
+      }
+    }
+
+    /* build in steps, with the main thread handed back in between */
+    await yieldToMain()
+    let scene
+    try { scene = new StreamScene(canvas, readColors(canvas)) } catch (e) { console.error("[relay] stream", e); return }
+    await yieldToMain()
+    scene.retune(readTier())
+    scene.resize(canvas.clientWidth, canvas.clientHeight)
+    scene.setScroll(window.scrollY)
+    await scene.prewarm()
+
+    const main = canvas.closest("main")
+    const reduce = window.matchMedia(REDUCE)
+    const coarse = window.matchMedia(COARSE)
+    const fine = window.matchMedia(FINE)
+
+    /* the path follows the page: re-resolve on any layout size change */
+    let placeRaf = 0
+    const place = () => {
+      cancelAnimationFrame(placeRaf)
+      placeRaf = requestAnimationFrame(() => {
+        scene.setPath(resolvePath(PATH[R.frame()], main))
+        if (reduce.matches) scene.render(STILL_MS)
+      })
+    }
+    place()
+    new ResizeObserver(place).observe(main)
+    R.onFrame(place)
+
+    /* viewport size, device tier, pointer, and the loop */
+    let tier = readTier()
+    let stop = null
+    let raf = 0
+    let width = canvas.clientWidth
+    let height = canvas.clientHeight
+    let live = false
+    const still = () => { scene.setScroll(window.scrollY); scene.reveal(STILL_MS, true); scene.render(STILL_MS) }
+    const sync = () => {
+      const run = live && !document.hidden && !reduce.matches
+      if (run && !stop) {
+        stop = R.ticker.subscribe((time) => { scene.setScroll(R.scrollY()); scene.render(time) }, NO_GAP)
+      } else if (!run && stop) { stop(); stop = null }
+      if (reduce.matches) still()
+    }
+    const onScroll = () => { if (!reduce.matches) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(still) }
+    const onResize = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const next = readTier()
+        const w = canvas.clientWidth, h = canvas.clientHeight
+        if (next === tier && w === width && h === height) return
+        width = w; height = h
+        if (next !== tier) { tier = next; scene.retune(tier) }
+        scene.resize(w, h)
+        if (reduce.matches) still()
+      })
+    }
+    const onPointer = (e) => {
+      if (reduce.matches || e.pointerType !== "mouse") return
+      scene.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1)
+    }
+    sync()
+    window.addEventListener("resize", onResize)
+    /* a rotation settles the locked height a beat after its resize event */
+    stableViewport.subscribe(onResize)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    if (fine.matches) window.addEventListener("pointermove", onPointer, { passive: true })
+    coarse.addEventListener("change", onResize)
+    reduce.addEventListener("change", sync)
+    document.addEventListener("visibilitychange", sync)
+
+    /* nothing renders, and the entrance waits, until the preloader has fully
+       closed; then the stream draws itself in with the hero's load sequence */
+    R.onReleased(() => {
+      live = true
+      sync()
+      R.seen(canvas, () => {
+        if (reduce.matches) return
+        setTimeout(() => scene.reveal(performance.now()), LOAD_STREAM)
+      })
+    })
+  }).catch((err) => {
+    if (window.console) console.error("[relay]", err)
+    banner("Scene assets failed to load — " + THREE_URL + " (" + err.message + "). The page stands without the stream.")
+  })
+})
+
+</script>
+
+</body>
 </html>

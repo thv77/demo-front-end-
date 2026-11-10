@@ -1,68 +1,52 @@
-# ORBIT HEALTH — Astronaut Health & Operational Platform (Frontend)
+# NASA ORBIT HEALTH — Expedition 07 Astronaut Telemetry & Operational Platform
 
-NASA Space Apps Challenge · Expedition 07 Medical Operations
-
-ORBIT HEALTH is an aerospace-grade clinical telemetry and operational platform designed for deep-space astronaut monitoring. Built with React 18, Vite 6, and Three.js 0.171 WebGL interactive scenes.
+An aerospace-grade clinical telemetry, physiological digital twin modeling, and autonomous healthcare platform for deep-space astronaut missions. Rebuilt with hyper-futuristic WebGL motion graphics, Three.js particle streams, UnrealBloom post-processing passes, and Lenis smooth scrolling.
 
 ---
 
-## Features
+## 🌟 Key Features & Operational Flight Decks
 
-- **7 Operational Flight Decks**:
-  1. **Mission Control**: Orbital position, ISS telemetry, cabin life support (ECLSS), and solar status.
-  2. **Crew Status**: Expedition 07 roster, real-time biometrics, radiation dosimeters, and EVA duration.
-  3. **Health Monitoring**: Real-time multi-waveform vital telemetry (ECG, SpO2, Core Temp, Optic Nerve Sheath Diameter).
-  4. **Medical Bay (3D Anatomical Digital Twin)**: Interactive Three.js 3D human body model with physiological heatmaps and symptom diagnostics.
-  5. **Emergency Center**: Spaceflight clinical decision support, differential diagnostics, and air-gapped emergency protocols.
-  6. **Orbit AI Clinical Assistant**: Aerospace clinical guidance, space medicine countermeasure prescriptions, and voice synthesis.
-  7. **Crew Admin Hub**: Personnel clearance triage, role escalation guards, and operational audit logging.
+1. **Flight Deck 01: Mission Control**:
+   - Orbital Altitude (`408 KM`), Velocity (`7.66 KM/S`), and Low Earth Orbit trajectory coordinates.
+   - Real-time Cabin Life Support (ECLSS): Cabin Temperature (`22.1°C`), Pressure (`101.3 kPa`), O₂ Partial Pressure (`21.2 kPa`), and cumulative radiation dosimeter monitoring.
 
-- **Aerospace Identity Protocol**:
-  - Full-screen **Authentication Gateway** with NASA Astronaut Badge ID (e.g. `NASA-621`) and Flight Security Access PIN.
-  - Zero commercial email requirement for space travelers.
-  - One-click instant offline demo personas (`Elena Vasquez`, `Dr. Marcus Chen`).
+2. **Flight Deck 02: Real-Time Physiological Telemetry**:
+   - Real-time animated **60 FPS Canvas ECG Monitor** with realistic Lead II P-Q-R-S-T cardiac waveform generator and audio pulse toggle.
+   - Interactive Crew Subject Switcher (`Commander Elena Vasquez`, `Dr. Marcus Chen`, `Amara Okafor`, `Luca Moretti`).
+   - Dynamic Vitals Telemetry (Heart Rate, Blood Oxygen SpO₂, Core Temp, Optic Nerve Sheath Diameter ONSD).
+   - 3D Digital Twin Anatomical Heatmap with pulsing cardiac node and SANS fluid shift indicators.
 
----
+3. **Flight Deck 03: Astronaut Biometric Profiles (Crew Status)**:
+   - Expedition 07 roster cards with high-tech astronaut portraits, initials badges, spaceflight EVA hours, and health scores (97/100).
 
-## Tech Stack
+4. **Flight Deck 04: Medical Bay & Microgravity Lab**:
+   - 98% Clinical Readiness equipment inventory matrix (Portable Ultrasound, Defibrillator, ECG patches, O₂ Kits).
+   - Autonomous Diagnostic Check simulation.
+   - Real-time care record handover log and microgravity pharmaceutical stability tracker.
 
-- **Framework**: React 18.3 + Vite 6
-- **3D Graphics**: Three.js 0.171 (Orbital Earth, Digital Twin, MedEquipment, Astronaut EVA scenes)
-- **Styling**: Tailwind CSS + Vanilla CSS Aerospace Design System
-- **Icons**: Lucide React
-- **Backend Integration**: Supabase Auth + PostgreSQL RLS (optional, graceful offline demo fallback)
+5. **Flight Deck 05: Emergency Clinical Center**:
+   - 4 Critical Emergency Protocols (Cabin Depressurization, Acute Radiation Storm, Cardiac Arrhythmia, Space Adaptation Sickness).
+   - Interactive clinical execution checklists.
 
----
+6. **Flight Deck 06: Orbit AI Clinical Assistant**:
+   - Neural 3D-styled animated orb with pulsating concentric radar rings.
+   - Live interactive query assistant with pre-configured quick prompts (*"Summarize crew wellness"*, *"Assess radiation exposure"*, *"Review SANS ocular protocol"*, *"Run EVA fitness check"*).
 
-## Quick Start
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Environment Setup (Optional)
-If connecting to a live Supabase backend:
-```bash
-cp .env.example .env.local
-```
-Edit `.env.local` and fill in your Supabase project URL and anon public key.
-
-> **Note**: If `.env.local` is not provided, the platform automatically boots into **Simulated Prototype Demo Mode**, enabling full evaluation of all 7 screens without external dependencies.
-
-### 3. Start Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:5173/](http://localhost:5173/) in your browser.
-
-### 4. Production Build
-```bash
-npm run build
-```
+7. **WebGL Particle Stream & Motion Engine**:
+   - Continuous Three.js particle stream along 3D Catmull-Rom spline curves.
+   - Post-processing bloom pipeline (`EffectComposer`, `UnrealBloomPass`).
+   - Lenis smooth inertia scrolling.
+   - Aerospace ring-and-fold preloader.
 
 ---
 
-## License & Attribution
+## 🚀 How to Run Locally
 
-Developed for the NASA Space Apps Challenge.
+You can preview the platform instantly using the built-in HTTP server:
+
+```bash
+node preview.mjs
+```
+
+Open your browser to:
+👉 **http://localhost:8080** (or the port displayed in your terminal)
